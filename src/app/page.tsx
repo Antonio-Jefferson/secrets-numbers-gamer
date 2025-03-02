@@ -22,6 +22,8 @@ export default function Lobby() {
   const createGame = async () => {
     if (!name) return alert("Digite seu nome!");
 
+    localStorage.setItem("playerName", name); // Armazena o nome do jogador no localStorage
+
     const docRef = await addDoc(collection(db, "games"), {
       player1: name,
       player2: null,
@@ -37,6 +39,7 @@ export default function Lobby() {
   // Entrar em um jogo existente
   const joinGame = async () => {
     if (!name || !gameId) return alert("Preencha seu nome e o ID do jogo!");
+    localStorage.setItem("playerName", name);
 
     const gameRef = doc(db, "games", gameId);
     const gameSnap = await getDoc(gameRef);
@@ -45,11 +48,21 @@ export default function Lobby() {
 
     const gameData = gameSnap.data();
 
-    if (gameData.player2) return alert("O jogo já está cheio!");
+    // Se o jogador já estiver na partida, apenas redireciona
+    if (gameData.player1 === name || gameData.player2 === name) {
+      router.push(`/game/${gameId}`);
+      return;
+    }
 
-    await updateDoc(gameRef, { player2: name, status: "in-progress" });
+    // Se o slot de player2 estiver livre, adiciona o jogador
+    if (!gameData.player2) {
+      await updateDoc(gameRef, { player2: name, status: "in-progress" });
+      router.push(`/game/${gameId}`);
+      return;
+    }
 
-    router.push(`/game/${gameId}`);
+    // Se já houver dois jogadores diferentes, bloqueia a entrada
+    alert("O jogo já está cheio!");
   };
 
   // Buscar jogos disponíveis

@@ -63,7 +63,7 @@ export default function GamePlay() {
       setFeedback(
         `❌ Errou! O número correto é ${
           parseInt(guess) < opponentNumbers[indexToGuess] ? "maior" : "menor"
-        }.`
+        } que ${guess}.`
       );
 
       await updateDoc(doc(db, "games", gameId), {
@@ -125,10 +125,11 @@ export default function GamePlay() {
                 type="number"
                 value={guess}
                 onChange={(e) => setGuess(e.target.value)}
-                className="text-black p-2 rounded mb-2"
+                className="text-blue-100 p-3 text-lg w-32 border-2 border-blue-500 bg-gray-800 focus:outline-none focus:border-blue-400"
               />
+
               <button
-                className="bg-green-500 p-2 rounded w-40 text-lg font-semibold"
+                className="bg-green-500 p-2 mt-2 rounded w-40 text-lg font-semibold"
                 onClick={handleGuess}
               >
                 Enviar Palpite

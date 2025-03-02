@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../../services/firebase";
 
@@ -9,6 +9,7 @@ export default function Game() {
   const gameId: string | undefined = Array.isArray(params?.id)
     ? params.id[0]
     : params?.id;
+
   if (!gameId) return;
 
   const [game, setGame] = useState<any>(null);
@@ -16,41 +17,33 @@ export default function Game() {
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
   const router = useRouter();
 
-  console.log("Game ID recebido:", gameId);
-
   useEffect(() => {
-    if (!gameId) {
-      console.log("Nenhum gameId encontrado!");
-      return;
-    }
+    if (!gameId) return;
 
-    console.log("Buscando jogo no Firestore...");
     const gameRef = doc(db, "games", gameId);
 
-    const unsubscribe = onSnapshot(
-      gameRef,
-      (snapshot) => {
-        console.log("Snapshot recebido:", snapshot.exists());
-        if (snapshot.exists()) {
-          console.log("Dados do jogo:", snapshot.data());
-          setGame(snapshot.data());
-          setLoading(false);
-        } else {
-          console.log("Jogo não encontrado.");
-          setLoading(false);
-          alert("Jogo não encontrado!");
-          router.push("/");
-        }
-      },
-      (error) => {
-        console.error("Erro ao buscar jogo:", error);
+    const unsubscribe = onSnapshot(gameRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const gameData = snapshot.data();
+        setGame(gameData);
         setLoading(false);
-        alert("Erro ao carregar jogo.");
+
+        // Verifica se ambos os jogadores já escolheram os números
+        if (
+          gameData.numbers1?.length === 6 &&
+          gameData.numbers2?.length === 6
+        ) {
+          router.push(`/start-game/${gameId}`);
+        }
+      } else {
+        setLoading(false);
+        alert("Jogo não encontrado!");
+        router.push("/");
       }
-    );
+    });
 
     return () => unsubscribe();
-  }, [gameId]);
+  }, [gameId, router]);
 
   const saveNumbers = async () => {
     if (!game) return alert("Carregando jogo...");
@@ -69,14 +62,7 @@ export default function Game() {
         [field]: selectedNumbers,
       });
 
-      // Aguarda a atualização no Firestore antes de redirecionar
-      const unsubscribe = onSnapshot(doc(db, "games", gameId), (snapshot) => {
-        const updatedGame = snapshot.data();
-        if (updatedGame && updatedGame[field]?.length > 0) {
-          unsubscribe(); // Para evitar chamadas desnecessárias
-          router.push(`/start-game/${gameId}`);
-        }
-      });
+      router.push(`/start-game/${gameId}`);
     } catch (error) {
       console.error("Erro ao salvar números:", error);
       alert("Erro ao salvar números. Tente novamente.");

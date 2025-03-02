@@ -103,7 +103,7 @@ export default function StartGame() {
 
       {!game?.numbers1?.length || !game?.numbers2?.length ? (
         <p className="text-yellow-400">
-          Aguardando ambos os jogadores escolherem os números...
+          Aguardando o jogador escolhere os números...
         </p>
       ) : (
         <button
