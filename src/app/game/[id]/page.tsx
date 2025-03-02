@@ -17,7 +17,6 @@ export default function Game() {
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
   const router = useRouter();
 
-  // Recupera o nome do jogador salvo no localStorage
   const playerName = localStorage.getItem("playerName");
 
   useEffect(() => {
@@ -31,21 +30,12 @@ export default function Game() {
         setGame(gameData);
         setLoading(false);
 
-        // Verifica se o jogador já tem números salvos e evita que sejam sobrescritos
         if (playerName) {
           if (gameData.player1 === playerName && gameData.numbers1) {
             setSelectedNumbers(gameData.numbers1);
           } else if (gameData.player2 === playerName && gameData.numbers2) {
             setSelectedNumbers(gameData.numbers2);
           }
-        }
-
-        // Se ambos os jogadores já escolheram os números, iniciar o jogo
-        if (
-          gameData.numbers1?.length === 6 &&
-          gameData.numbers2?.length === 6
-        ) {
-          router.push(`/start-game/${gameId}`);
         }
       } else {
         setLoading(false);
@@ -65,7 +55,6 @@ export default function Game() {
 
     let field = "";
 
-    // Verifica se o jogador atual é player1 ou player2
     if (game.player1 === playerName) {
       field = "numbers1";
     } else if (game.player2 === playerName) {
@@ -74,13 +63,13 @@ export default function Game() {
       return alert("Você não está neste jogo!");
     }
 
-    // Permite que o jogador escolha novamente apenas se ainda não há vencedor
-    if (game.winner === null || !game.winner) {
+    if (!game.winner) {
       try {
         await updateDoc(doc(db, "games", gameId), {
           [field]: selectedNumbers,
         });
 
+        // 🚀 Assim que o jogador confirma, ele já é redirecionado para iniciar o jogo
         router.push(`/start-game/${gameId}`);
       } catch (error) {
         console.error("Erro ao salvar números:", error);

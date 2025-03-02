@@ -35,24 +35,34 @@ export default function GamePlay() {
   const resetGame = async () => {
     if (!gameId || !game) return;
 
-    // Reseta o jogo no Firestore
+    if (game.winner === null) {
+      // Apenas redireciona se o jogo já estiver sem vencedor
+      router.push(`/game/${gameId}`);
+      return;
+    }
+
+    // Define quem será o próximo a jogar
+    const nextTurn =
+      game.currentTurn === game.player1 ? game.player2 : game.player1;
+
+    // Reseta o jogo no Firestore e alterna quem começa
     await updateDoc(doc(db, "games", gameId), {
       winner: null, // Remove o vencedor
       revealed1: [], // Zera os números revelados
       revealed2: [],
       numbers1: null, // Remove os números do Jogador 1
       numbers2: null, // Remove os números do Jogador 2
-      currentTurn: game.player1, // Reinicia com o Jogador 1
+      currentTurn: nextTurn, // Alterna quem joga primeiro
     });
 
     setFeedback(
       "Jogo reiniciado! Redirecionando para escolher novos números..."
     );
 
-    // Redireciona para a página de configuração (ajuste o caminho conforme sua estrutura)
+    // Pequeno atraso para mostrar o feedback antes do redirecionamento
     setTimeout(() => {
-      router.push(`/game/${gameId}`); // Ou a rota correta para escolher números
-    }, 1000); // Pequeno atraso para o feedback ser visível antes do redirecionamento
+      router.push(`/game/${gameId}`);
+    }, 1000);
   };
 
   const handleGuess = async () => {
@@ -79,6 +89,7 @@ export default function GamePlay() {
       if (revealed.length === opponentNumbers.length) {
         await updateDoc(doc(db, "games", gameId), {
           winner: currentUser,
+          [`scores.${currentUser}`]: (game.scores?.[currentUser] || 0) + 1, // Incrementa a pontuação
         });
         setFeedback(`🏆 ${currentUser} venceu o jogo!`);
       }
@@ -101,12 +112,15 @@ export default function GamePlay() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
       <h1 className="text-2xl font-bold mb-4">🎮 Gameplay</h1>
-      <p className="text-lg mb-2">
-        <strong>Jogador 1:</strong> {game?.player1}
-      </p>
-      <p className="text-lg mb-2">
-        <strong>Jogador 2:</strong> {game?.player2}
-      </p>
+      <div className="mb-4">
+        <h2 className="text-xl font-bold">🏆 Placar</h2>
+        <p className="text-lg">
+          {game?.player1}: {game?.scores?.[game.player1] || 0} vitórias
+        </p>
+        <p className="text-lg">
+          {game?.player2}: {game?.scores?.[game.player2] || 0} vitórias
+        </p>
+      </div>
       <p className="text-yellow-400 mb-4">
         <strong>Vez de:</strong> {game?.currentTurn}
       </p>
