@@ -69,7 +69,6 @@ export default function Game() {
           [field]: selectedNumbers,
         });
 
-        // 🚀 Assim que o jogador confirma, ele já é redirecionado para iniciar o jogo
         router.push(`/start-game/${gameId}`);
       } catch (error) {
         console.error("Erro ao salvar números:", error);
@@ -94,25 +93,28 @@ export default function Game() {
       <h2 className="text-xl mb-2">Escolha seus números ({playerName})</h2>
 
       <div className="grid grid-cols-5 gap-2">
-        {[...Array(9).keys()].map((num) => (
-          <button
-            key={num}
-            className={`p-2 border rounded w-12 h-12 text-lg font-bold ${
-              selectedNumbers.includes(num) ? "bg-green-500" : "bg-gray-700"
-            }`}
-            onClick={() => {
-              if (selectedNumbers.length >= 6 && !selectedNumbers.includes(num))
-                return;
-              setSelectedNumbers((prev) =>
-                prev.includes(num)
-                  ? prev.filter((n) => n !== num)
-                  : [...prev, num]
-              );
-            }}
-          >
-            {num}
-          </button>
-        ))}
+        {[...Array(10).keys()].map((num) => {
+          const count = selectedNumbers.filter((n) => n === num).length;
+          return (
+            <button
+              key={num}
+              className={`relative p-2 border rounded w-12 h-12 text-lg font-bold ${
+                count > 0 ? "bg-green-500" : "bg-gray-700"
+              }`}
+              onClick={() => {
+                if (selectedNumbers.length >= 6) return;
+                setSelectedNumbers((prev) => [...prev, num]);
+              }}
+            >
+              {num}
+              {count > 0 && (
+                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <button
