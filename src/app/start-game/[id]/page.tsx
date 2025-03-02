@@ -6,7 +6,10 @@ import { db } from "../../services/firebase";
 
 export default function StartGame() {
   const params = useParams();
-  const gameId = params.id;
+  const gameId: string | undefined = Array.isArray(params?.id)
+    ? params.id[0]
+    : params?.id;
+  if (!gameId) return;
   const [game, setGame] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
