@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation"; // Adicione useRouter
-import { doc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot, increment } from "firebase/firestore";
 import { db } from "../../services/firebase";
 
 export default function GamePlay() {
@@ -87,6 +87,10 @@ export default function GamePlay() {
       });
 
       if (revealed.length === opponentNumbers.length) {
+        const winnerRef = doc(db, "users", currentUser);
+        await updateDoc(winnerRef, {
+          wins: increment(1),
+        });
         await updateDoc(doc(db, "games", gameId), {
           winner: currentUser,
           [`scores.${currentUser}`]: (game.scores?.[currentUser] || 0) + 1, // Incrementa a pontuação

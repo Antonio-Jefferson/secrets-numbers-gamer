@@ -50,8 +50,8 @@ export default function Game() {
   const saveNumbers = async () => {
     if (!game) return alert("Carregando jogo...");
     if (!playerName) return alert("Seu nome não foi encontrado!");
-    if (selectedNumbers.length !== 6)
-      return alert("Escolha exatamente 6 números!");
+    if (selectedNumbers.length !== 5)
+      return alert("Escolha exatamente 5 números!");
 
     let field = "";
 
@@ -102,7 +102,7 @@ export default function Game() {
                 count > 0 ? "bg-green-500" : "bg-gray-700"
               }`}
               onClick={() => {
-                if (selectedNumbers.length >= 6) return;
+                if (selectedNumbers.length >= 5) return;
                 setSelectedNumbers((prev) => [...prev, num]);
               }}
             >
@@ -120,7 +120,7 @@ export default function Game() {
       <button
         className="bg-blue-500 p-2 rounded mt-4 w-40 text-lg font-semibold disabled:opacity-50"
         onClick={saveNumbers}
-        disabled={selectedNumbers.length !== 6}
+        disabled={selectedNumbers.length !== 5}
       >
         Confirmar
       </button>
