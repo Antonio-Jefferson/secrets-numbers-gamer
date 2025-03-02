@@ -105,12 +105,16 @@ export default function GamePlay() {
             {currentUser === game?.player1
               ? game?.revealed2 && game?.revealed2.length > 0
                 ? game.revealed2
-                    .map((n, i) => (n !== undefined ? n : "🔒"))
+                    .map((n: number | undefined, i: number) =>
+                      n !== undefined ? n : "🔒"
+                    )
                     .join(" ")
                 : "🔒 🔒 🔒 🔒 🔒 🔒"
               : game?.revealed1 && game?.revealed1.length > 0
               ? game.revealed1
-                  .map((n, i) => (n !== undefined ? n : "🔒"))
+                  .map((n: number | undefined, i: number) =>
+                    n !== undefined ? n : "🔒"
+                  )
                   .join(" ")
               : "🔒 🔒 🔒 🔒 🔒 🔒"}
           </p>
