@@ -1,15 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation"; // Adicione useRouter
 import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../../services/firebase";
 
 export default function GamePlay() {
   const params = useParams();
+  const router = useRouter(); // Para redirecionar
   const gameId: string | undefined = Array.isArray(params?.id)
     ? params.id[0]
     : params?.id;
-  if (!gameId) return;
+  if (!gameId) return null; // Retorna null se não houver gameId
   const [game, setGame] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState("");
   const [guess, setGuess] = useState("");
@@ -30,6 +31,29 @@ export default function GamePlay() {
 
     return () => unsubscribe();
   }, [gameId]);
+
+  const resetGame = async () => {
+    if (!gameId || !game) return;
+
+    // Reseta o jogo no Firestore
+    await updateDoc(doc(db, "games", gameId), {
+      winner: null, // Remove o vencedor
+      revealed1: [], // Zera os números revelados
+      revealed2: [],
+      numbers1: null, // Remove os números do Jogador 1
+      numbers2: null, // Remove os números do Jogador 2
+      currentTurn: game.player1, // Reinicia com o Jogador 1
+    });
+
+    setFeedback(
+      "Jogo reiniciado! Redirecionando para escolher novos números..."
+    );
+
+    // Redireciona para a página de configuração (ajuste o caminho conforme sua estrutura)
+    setTimeout(() => {
+      router.push(`/game/${gameId}`); // Ou a rota correta para escolher números
+    }, 1000); // Pequeno atraso para o feedback ser visível antes do redirecionamento
+  };
 
   const handleGuess = async () => {
     if (!guess || !game || game.currentTurn !== currentUser) return;
@@ -52,7 +76,6 @@ export default function GamePlay() {
         [currentUser === game.player1 ? "revealed2" : "revealed1"]: revealed,
       });
 
-      // Verifica se o jogador acertou todos os números
       if (revealed.length === opponentNumbers.length) {
         await updateDoc(doc(db, "games", gameId), {
           winner: currentUser,
@@ -103,18 +126,16 @@ export default function GamePlay() {
           <p className="text-lg mb-4">
             <strong>Números do adversário:</strong>{" "}
             {currentUser === game?.player1
-              ? game?.revealed2 && game?.revealed2.length > 0
+              ? game?.revealed2 && game.revealed2.length > 0
                 ? game.revealed2
-                    .map((n: number | undefined, i: number) =>
+                    .map((n: number | undefined) =>
                       n !== undefined ? n : "🔒"
                     )
                     .join(" ")
                 : "🔒 🔒 🔒 🔒 🔒 🔒"
-              : game?.revealed1 && game?.revealed1.length > 0
+              : game?.revealed1 && game.revealed1.length > 0
               ? game.revealed1
-                  .map((n: number | undefined, i: number) =>
-                    n !== undefined ? n : "🔒"
-                  )
+                  .map((n: number | undefined) => (n !== undefined ? n : "🔒"))
                   .join(" ")
               : "🔒 🔒 🔒 🔒 🔒 🔒"}
           </p>
@@ -127,7 +148,6 @@ export default function GamePlay() {
                 onChange={(e) => setGuess(e.target.value)}
                 className="text-blue-100 p-3 text-lg w-32 border-2 border-blue-500 bg-gray-800 focus:outline-none focus:border-blue-400"
               />
-
               <button
                 className="bg-green-500 p-2 mt-2 rounded w-40 text-lg font-semibold"
                 onClick={handleGuess}
@@ -139,6 +159,15 @@ export default function GamePlay() {
 
           <p className="mt-4 text-lg">{feedback}</p>
         </>
+      )}
+
+      {(game?.winner || !game?.numbers1 || !game?.numbers2) && (
+        <button
+          className="bg-red-500 p-2 mt-4 rounded w-40 text-lg font-semibold"
+          onClick={resetGame}
+        >
+          🔄 Reiniciar Jogo
+        </button>
       )}
     </div>
   );
