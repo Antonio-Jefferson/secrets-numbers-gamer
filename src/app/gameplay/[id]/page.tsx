@@ -153,7 +153,16 @@ export default function GamePlay() {
                   .join(" ")
               : "🔒 🔒 🔒 🔒 🔒 🔒"}
           </p>
-
+          <p className="text-lg mb-4">
+            <strong>Acertos do adversário:</strong>{" "}
+            {currentUser === game?.player1
+              ? game?.revealed1 && game.revealed1.length > 0
+                ? game.revealed1.join(", ")
+                : "Nenhum acerto ainda"
+              : game?.revealed2 && game.revealed2.length > 0
+              ? game.revealed2.join(", ")
+              : "Nenhum acerto ainda"}
+          </p>
           {game?.currentTurn === currentUser && (
             <div className="flex flex-col items-center">
               <input
