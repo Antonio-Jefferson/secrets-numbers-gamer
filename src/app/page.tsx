@@ -42,7 +42,8 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
-      <h1 className="text-2xl font-bold mb-6">Faça login</h1>
+      <h1 className="text-3xl font-bold mb-6">🔒 JOGO DO CADEADO</h1>
+      <h2 className="text-2xl font-bold mb-6">Faça login</h2>
       <button
         className="flex items-center justify-center bg-white text-gray-900 font-semibold p-3 rounded-lg w-80 shadow-lg hover:bg-gray-200 transition"
         onClick={handleGoogleLogin}
