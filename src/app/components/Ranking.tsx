@@ -9,17 +9,26 @@ export default function Ranking() {
 
   useEffect(() => {
     const fetchRanking = async () => {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, orderBy("wins", "desc"));
-      const snapshot = await getDocs(q);
+      try {
+        const usersRef = collection(db, "users");
+        const usersSnapshot = await getDocs(usersRef);
 
-      const rankingData = snapshot.docs.map((doc) => ({
-        name: doc.data().name ? doc.data().name.split(" ")[0] : doc.id, // Pega só o primeiro nome
-        wins: doc.data().wins || 0,
-      }));
+        const rankingData = usersSnapshot.docs.map((userDoc) => {
+          const userData = userDoc.data();
+          console.log(userData);
+          return {
+            name: userData.name ? userData.name.split(" ")[0] : "Desconhecido",
+            wins: userData.wins || 0, // Pega a quantidade de vitórias
+          };
+        });
 
-      setPlayers(rankingData);
-      setLoading(false);
+        rankingData.sort((a, b) => b.wins - a.wins);
+        setPlayers(rankingData);
+      } catch (error) {
+        console.error("Erro ao buscar ranking:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchRanking();

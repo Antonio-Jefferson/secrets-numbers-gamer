@@ -9,8 +9,10 @@ import { FcGoogle } from "react-icons/fc";
 export default function LoginPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
@@ -18,6 +20,7 @@ export default function LoginPage() {
         await checkUserInFirestore(currentUser);
         router.push("/home");
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -37,20 +40,26 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    setLoading(true);
     await signInWithPopup(auth, provider);
+    setLoading(false);
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
       <h1 className="text-3xl font-bold mb-6">🔒 JOGO DO CADEADO</h1>
       <h2 className="text-2xl font-bold mb-6">Faça login</h2>
-      <button
-        className="flex items-center justify-center bg-white text-gray-900 font-semibold p-3 rounded-lg w-80 shadow-lg hover:bg-gray-200 transition"
-        onClick={handleGoogleLogin}
-      >
-        <FcGoogle className="text-2xl mr-3" />
-        Entrar com Google
-      </button>
+      {loading ? (
+        <div className="text-lg font-semibold">Carregando...</div>
+      ) : (
+        <button
+          className="flex items-center justify-center bg-white text-gray-900 font-semibold p-3 rounded-lg w-80 shadow-lg hover:bg-gray-200 transition"
+          onClick={handleGoogleLogin}
+        >
+          <FcGoogle className="text-2xl mr-3" />
+          Entrar com Google
+        </button>
+      )}
     </div>
   );
 }

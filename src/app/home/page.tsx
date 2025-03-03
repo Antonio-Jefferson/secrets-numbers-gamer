@@ -16,6 +16,7 @@ import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth, db } from "../services/firebase";
 import Ranking from "../components/Ranking";
 import { BellIcon } from "@heroicons/react/24/solid";
+import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
@@ -186,12 +187,19 @@ export default function Home() {
           <p className="mt-2 text-lg font-semibold">
             {user.displayName || "Jogador"}
           </p>
-          <button
-            className="mt-2 bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600"
-            onClick={handleLogout}
-          >
-            Sair
-          </button>
+          <div className="flex items-center space-x-1">
+            <button
+              className="mt-2 bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600"
+              onClick={handleLogout}
+            >
+              Sair
+            </button>
+            <Link href="/profile">
+              <button className="mt-2 bg-sky-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-sky-600">
+                Perfil
+              </button>
+            </Link>
+          </div>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db, auth } from "../../services/firebase";
@@ -16,7 +16,7 @@ export default function GamePlay() {
   const [game, setGame] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [guess, setGuess] = useState("");
-  const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState<ReactNode>("");
 
   useEffect(() => {
     if (!gameId) return;
@@ -30,7 +30,6 @@ export default function GamePlay() {
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
-        console.log(user);
         setCurrentUser(user);
       } else {
         router.push("/login");
@@ -101,21 +100,46 @@ export default function GamePlay() {
 
       if (revealed.length === opponentNumbers.length) {
         const userRef = doc(db, "users", currentUser.uid);
+        const opponentRef = doc(
+          db,
+          "users",
+          isPlayer1 ? game.player2.uid : game.player1.uid
+        );
+
+        // Atualiza vitórias para o vencedor
         await updateDoc(userRef, {
           wins: (game.scores?.[currentUser.uid] || 0) + 1,
         });
+
+        // Atualiza derrotas para o perdedor
+        await updateDoc(opponentRef, {
+          losses:
+            (game.scores?.[isPlayer1 ? game.player2.uid : game.player1.uid] ||
+              0) + 1,
+        });
+
         await updateDoc(doc(db, "games", gameId), {
           winner: currentUser.uid,
           [`scores.${currentUser.uid}`]:
             (game.scores?.[currentUser.uid] || 0) + 1,
+          [`scores.${isPlayer1 ? game.player2.uid : game.player1.uid}`]:
+            (game.scores?.[isPlayer1 ? game.player2.uid : game.player1.uid] ||
+              0) + 1,
         });
+
         setFeedback(`🏆 ${currentUser.displayName || "Você"} venceu o jogo!`);
       }
     } else {
       setFeedback(
-        `❌ Errou! O número correto é ${
-          parseInt(guess) < opponentNumbers[indexToGuess] ? "maior" : "menor"
-        } que ${guess}.`
+        <>
+          ❌ Errou! O número correto é{" "}
+          <strong style={{ color: "red" }}>
+            {parseInt(guess) < opponentNumbers[indexToGuess]
+              ? "MAIOR"
+              : "MENOR"}
+          </strong>{" "}
+          que {guess}.
+        </>
       );
 
       await updateDoc(doc(db, "games", gameId), {
@@ -148,7 +172,7 @@ export default function GamePlay() {
           </div>
           <p className="text-yellow-400 mb-4">
             <strong>Vez de:</strong>{" "}
-            {game.currentTurn === game.player1.uid
+            {game.currentTurn.uid === game.player1.uid
               ? game.player1.name.split(" ")[0]
               : game.player2.name.split(" ")[0]}
           </p>
@@ -190,7 +214,7 @@ export default function GamePlay() {
                   : "Nenhum acerto ainda"}
               </p>
               {game.currentTurn.uid === currentUser.uid && (
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center justify-center">
                   <input
                     type="number"
                     value={guess}
@@ -212,10 +236,10 @@ export default function GamePlay() {
           {(game.winner || !game.numbers1 || !game.numbers2) && (
             <div className="space-x-4">
               <button
-                className="bg-red-500 p-2 mt-4 rounded w-40 text-lg font-semibold"
+                className="bg-green-800 p-2 mt-4 rounded w-40 text-lg font-semibold"
                 onClick={resetGame}
               >
-                🔄 Reiniciar
+                Reiniciar
               </button>
 
               <button
