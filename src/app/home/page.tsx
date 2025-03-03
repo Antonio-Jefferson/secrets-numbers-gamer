@@ -96,7 +96,7 @@ export default function Home() {
           </button>
 
           {showInstructions && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="fixed inset-0 flex z-20 items-center justify-center bg-black bg-opacity-50">
               <div className="bg-gray-900 p-6 rounded-xl shadow-lg relative max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                 <button
                   className="absolute top-2 right-2 text-white text-xl"
