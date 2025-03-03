@@ -13,6 +13,7 @@ import {
   doc,
   getDocs,
   where,
+  deleteDoc,
 } from "firebase/firestore";
 import { onAuthStateChanged, User } from "firebase/auth";
 
@@ -142,6 +143,17 @@ export default function Forum() {
     }
   };
 
+  const deleteMessage = async (msgId: string) => {
+    if (!user) return;
+
+    try {
+      const messageRef = doc(db, "messages", msgId);
+      await deleteDoc(messageRef);
+    } catch (error) {
+      console.error("Erro ao excluir mensagem:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
       <h1 className="text-2xl font-bold mb-4">💬 Fórum de Discussão</h1>
@@ -227,17 +239,25 @@ export default function Forum() {
                   <p className="text-sm text-gray-300">{msg.text}</p>
                   <div className="flex space-x-2 mt-1">
                     <button
-                      className="text-blue-400 text-xs"
+                      className="text-blue-400 text-xs  cursor-pointer"
                       onClick={() => setReplyingTo(msg)}
                     >
                       Responder
                     </button>
                     <button
-                      className="text-green-400 text-xs"
+                      className="text-green-400 text-xs  cursor-pointer"
                       onClick={() => likeMessage(msg.id, msg.likes)}
                     >
                       👍 {msg.likes}
                     </button>
+                    {msg.userId === user?.uid && (
+                      <button
+                        className="text-red-400 text-xs cursor-pointer"
+                        onClick={() => deleteMessage(msg.id)}
+                      >
+                        Excluir
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
