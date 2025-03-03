@@ -122,9 +122,6 @@ export default function GamePlay() {
           winner: currentUser.uid,
           [`scores.${currentUser.uid}`]:
             (game.scores?.[currentUser.uid] || 0) + 1,
-          [`scores.${isPlayer1 ? game.player2.uid : game.player1.uid}`]:
-            (game.scores?.[isPlayer1 ? game.player2.uid : game.player1.uid] ||
-              0) + 1,
         });
 
         setFeedback(`🏆 ${currentUser.displayName || "Você"} venceu o jogo!`);
