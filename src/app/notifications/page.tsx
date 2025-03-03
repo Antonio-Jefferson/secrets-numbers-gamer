@@ -15,10 +15,10 @@ interface NotificationsProps {
   markNotificationsAsRead: () => void;
 }
 
-const Notifications: React.FC<NotificationsProps> = ({
+export default function Notifications({
   notifications,
   markNotificationsAsRead,
-}) => {
+}: NotificationsProps) {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const handleClose = () => {
@@ -76,6 +76,4 @@ const Notifications: React.FC<NotificationsProps> = ({
       )}
     </div>
   );
-};
-
-export default Notifications;
+}
