@@ -1,28 +1,45 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { collection, addDoc, setDoc, doc } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
-export default function CreateGame() {
-  const [name, setName] = useState("");
+export default function CreateGamePage() {
+  const [gameName, setGameName] = useState("");
+  const [user, setUser] = useState<{ uid: string; name: string } | null>(null);
   const router = useRouter();
+  const auth = getAuth();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      if (authUser) {
+        // Buscar dados do usuário no Firestore
+        const userRef = doc(db, "users", authUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          setUser({
+            uid: authUser.uid,
+            name: userSnap.data().name || "Jogador",
+          });
+        }
+      } else {
+        router.push("/login"); // Redireciona para login se não estiver autenticado
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth, router]);
 
   const createGame = async () => {
-    if (!name) return alert("Digite seu nome!");
+    if (!gameName) return alert("Digite o nome da partida!");
+    if (!user) return alert("Você precisa estar logado.");
 
-    localStorage.setItem("playerName", name);
-
-    const userRef = doc(db, "users", name); // Criando referência ao usuário
-    await setDoc(userRef, { wins: 0 }, { merge: true }); // Criando usuário caso não exista
-
-    // Criar o jogo na coleção 'games'
     const docRef = await addDoc(collection(db, "games"), {
-      player1: name,
+      name: gameName,
+      player1: { uid: user.uid, name: user.name }, // Salvando nome e UID do jogador
       player2: null,
-      numbers1: [],
-      numbers2: [],
-      turn: name,
       status: "waiting",
     });
 
@@ -30,14 +47,14 @@ export default function CreateGame() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
+    <div className="flex flex-col items-center min-h-screen bg-gray-900 text-white p-4">
       <h1 className="text-2xl font-bold mb-4">Criar Novo Jogo</h1>
 
       <input
-        className="p-2 text-blue-100 w-80 mb-2"
-        placeholder="Seu nome..."
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        className="p-2 text-blue-100 bg-gray-700 rounded w-80 mb-2"
+        placeholder="Nome da Partida (ex: X1 Jeff e Layde)"
+        value={gameName}
+        onChange={(e) => setGameName(e.target.value)}
       />
 
       <button

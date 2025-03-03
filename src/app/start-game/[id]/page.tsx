@@ -2,17 +2,23 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { doc, updateDoc, onSnapshot } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { db } from "../../services/firebase";
 
 export default function StartGame() {
+  const auth = getAuth();
   const params = useParams();
   const gameId: string | undefined = Array.isArray(params?.id)
     ? params.id[0]
     : params?.id;
   if (!gameId) return;
+
   const [game, setGame] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    uid: string;
+    name: string;
+  } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -29,12 +35,21 @@ export default function StartGame() {
   }, [gameId]);
 
   useEffect(() => {
-    // Pegando o nome do jogador salvo no localStorage
-    const storedUser = localStorage.getItem("playerName");
-    if (storedUser) {
-      setCurrentUser(storedUser.trim().toLowerCase());
-    }
-  }, []);
+    // Pegando o usuário autenticado pelo Firebase
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser({
+          uid: user.uid,
+          name: user.displayName || "Jogador",
+        });
+      } else {
+        setCurrentUser(null);
+        router.push("/login"); // Redireciona para login se não estiver autenticado
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth, router]);
 
   useEffect(() => {
     if (game?.numbers1?.length && game?.numbers2?.length) {
@@ -62,8 +77,10 @@ export default function StartGame() {
   };
 
   // Verificando se o jogador atual é player1 ou player2
-  const isPlayer1 = currentUser === game?.player1?.toLowerCase();
-  const isPlayer2 = currentUser === game?.player2?.toLowerCase();
+  const isPlayer1 =
+    currentUser?.name.toLowerCase() === game?.player1?.name.toLowerCase();
+  const isPlayer2 =
+    currentUser?.name.toLowerCase() === game?.player2?.name.toLowerCase();
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
@@ -71,10 +88,11 @@ export default function StartGame() {
 
       <div className="text-lg mb-4">
         <p>
-          <strong>Jogador 1:</strong> {game?.player1 || "Aguardando..."}
+          <strong>Jogador 1:</strong>{" "}
+          {currentUser?.name.split(" ")[0] || "Aguardando..."}
         </p>
         <p>
-          <strong>Jogador 2:</strong> {game?.player2 || "Aguardando jogador..."}
+          <strong>Jogador 2:</strong> {isPlayer2 || "Aguardando jogador..."}
         </p>
       </div>
 
@@ -103,7 +121,7 @@ export default function StartGame() {
 
       {!game?.numbers1?.length || !game?.numbers2?.length ? (
         <p className="text-yellow-400">
-          Aguardando o jogador escolhere os números...
+          Aguardando o jogador escolher os números...
         </p>
       ) : (
         <button

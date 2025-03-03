@@ -8,30 +8,67 @@ import {
   getDoc,
   updateDoc,
   setDoc,
+  query,
+  where,
 } from "firebase/firestore";
 import { db } from "../services/firebase";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 export default function JoinGame() {
-  const [name, setName] = useState("");
   const [gameId, setGameId] = useState("");
   const [games, setGames] = useState<{ id: string }[]>([]);
+  const [user, setUser] = useState<{ uid: string; name: string } | null>(null);
   const router = useRouter();
+  const auth = getAuth();
 
   useEffect(() => {
-    fetchGames();
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      if (authUser) {
+        const userRef = doc(db, "users", authUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          setUser({
+            uid: authUser.uid,
+            name: userSnap.data().name || "Jogador",
+          });
+          fetchGames();
+        }
+      } else {
+        router.push("/login");
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const fetchGames = async () => {
-    const querySnapshot = await getDocs(collection(db, "games"));
+    const querySnapshot = await getDocs(
+      query(collection(db, "games"), where("status", "==", "waiting"))
+    );
     setGames(querySnapshot.docs.map((doc) => ({ id: doc.id })));
   };
 
   const joinGame = async () => {
-    if (!name || !gameId) return alert("Preencha seu nome e o ID do jogo!");
-    localStorage.setItem("playerName", name);
-    const userRef = doc(db, "users", name); // Criando referência ao usuário
-    await setDoc(userRef, { wins: 0 }, { merge: true }); // Criando usuário caso não exista
+    if (!user || !gameId)
+      return alert("Você precisa estar logado e informar o ID do jogo!");
 
+    // 🔎 Verificar se o usuário já está em um jogo ativo
+    const activeGamesQuery = query(
+      collection(db, "games"),
+      where("status", "in", ["waiting", "in-progress"]),
+      where("player1", "==", user.uid) // Verifica se é player1
+    );
+
+    const activeGamesSnapshot = await getDocs(activeGamesQuery);
+
+    if (!activeGamesSnapshot.empty) {
+      return alert(
+        "Você já está em um jogo ativo. Termine antes de entrar em outro."
+      );
+    }
+
+    // 📌 Se passou na verificação, tentar entrar no jogo
     const gameRef = doc(db, "games", gameId);
     const gameSnap = await getDoc(gameRef);
 
@@ -39,13 +76,21 @@ export default function JoinGame() {
 
     const gameData = gameSnap.data();
 
-    if (gameData.player1 === name || gameData.player2 === name) {
+    // Se já estiver no jogo, apenas redireciona
+    if (
+      gameData.player1?.uid === user.uid ||
+      gameData.player2?.uid === user.uid
+    ) {
       router.push(`/game/${gameId}`);
       return;
     }
 
+    // Se ainda houver vaga, entra no jogo
     if (!gameData.player2) {
-      await updateDoc(gameRef, { player2: name, status: "in-progress" });
+      await updateDoc(gameRef, {
+        player2: { uid: user.uid, name: user.name },
+        status: "in-progress",
+      });
       router.push(`/game/${gameId}`);
       return;
     }
@@ -56,13 +101,6 @@ export default function JoinGame() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
       <h1 className="text-2xl font-bold mb-4">Entrar em uma Partida</h1>
-
-      <input
-        className="p-2 text-blue-100 w-80 mb-2"
-        placeholder="Seu nome..."
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
 
       <input
         className="p-2 text-blue-100 w-80 mb-2"

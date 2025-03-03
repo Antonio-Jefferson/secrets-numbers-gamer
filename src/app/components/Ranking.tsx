@@ -14,7 +14,7 @@ export default function Ranking() {
       const snapshot = await getDocs(q);
 
       const rankingData = snapshot.docs.map((doc) => ({
-        name: doc.data().name || doc.id, // Usa doc.id caso o campo "name" não exista
+        name: doc.data().name ? doc.data().name.split(" ")[0] : doc.id, // Pega só o primeiro nome
         wins: doc.data().wins || 0,
       }));
 
