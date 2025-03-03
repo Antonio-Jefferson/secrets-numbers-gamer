@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../services/firebase";
 
 export default function Ranking() {
@@ -15,7 +15,6 @@ export default function Ranking() {
 
         const rankingData = usersSnapshot.docs.map((userDoc) => {
           const userData = userDoc.data();
-          console.log(userData);
           return {
             name: userData.name ? userData.name.split(" ")[0] : "Desconhecido",
             wins: userData.wins || 0, // Pega a quantidade de vitórias
@@ -41,7 +40,17 @@ export default function Ranking() {
       </h1>
 
       {loading ? (
-        <p className="text-center text-gray-400">Carregando ranking...</p>
+        <ul className="w-full max-w-2xl text-lg space-y-2">
+          {[...Array(5)].map((_, index) => (
+            <li
+              key={index}
+              className="bg-gray-800 p-2 rounded flex justify-between items-center text-center md:text-left animate-pulse"
+            >
+              <span className="flex-1 bg-gray-700 h-6 w-1/3 rounded"></span>
+              <span className="flex-1 bg-gray-700 h-6 w-1/4 rounded"></span>
+            </li>
+          ))}
+        </ul>
       ) : players.length === 0 ? (
         <p className="text-center text-gray-400">
           Nenhum jogador no ranking ainda. Jogue uma partida para aparecer aqui!

@@ -46,6 +46,7 @@ export default function Forum() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState<string>("");
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, setUser);
@@ -59,6 +60,7 @@ export default function Forum() {
         snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Message))
       );
     });
+    setLoading(false);
     return () => unsubscribe();
   }, []);
 
@@ -184,42 +186,64 @@ export default function Forum() {
       )}
 
       <div className="w-full max-w-md mt-6 space-y-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className="p-3 rounded-lg flex items-start space-x-3 bg-gray-800"
-          >
-            <img
-              src={msg.photoURL}
-              className="w-10 h-10 rounded-full border-2 border-white"
-              alt="Avatar"
-            />
-            <div>
-              <p className="text-sm font-semibold">{msg.userName}</p>
-              {msg.replyingTo && (
-                <div className="text-xs bg-gray-700 p-1 rounded">
-                  <p className="text-blue-400">{msg.replyingTo.userName}:</p>
-                  <p className="text-gray-300">{msg.replyingTo.text}</p>
+        {loading ? (
+          <div className="w-full max-w-md space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="p-3 rounded-lg flex items-start space-x-3 bg-gray-800 animate-pulse"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-700"></div>
+                <div className="flex-1">
+                  <div className="w-24 h-4 bg-gray-700 rounded mb-2"></div>
+                  <div className="w-full h-3 bg-gray-700 rounded mb-1"></div>
+                  <div className="w-3/4 h-3 bg-gray-700 rounded"></div>
                 </div>
-              )}
-              <p className="text-sm text-gray-300">{msg.text}</p>
-              <div className="flex space-x-2 mt-1">
-                <button
-                  className="text-blue-400 text-xs"
-                  onClick={() => setReplyingTo(msg)}
-                >
-                  Responder
-                </button>
-                <button
-                  className="text-green-400 text-xs"
-                  onClick={() => likeMessage(msg.id, msg.likes)}
-                >
-                  👍 {msg.likes}
-                </button>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
+        ) : (
+          <div className="w-full max-w-md space-y-4">
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className="p-3 rounded-lg flex items-start space-x-3 bg-gray-800"
+              >
+                <img
+                  src={msg.photoURL}
+                  className="w-10 h-10 rounded-full border-2 border-white"
+                  alt="Avatar"
+                />
+                <div>
+                  <p className="text-sm font-semibold">{msg.userName}</p>
+                  {msg.replyingTo && (
+                    <div className="text-xs bg-gray-700 p-1 rounded">
+                      <p className="text-blue-400">
+                        {msg.replyingTo.userName}:
+                      </p>
+                      <p className="text-gray-300">{msg.replyingTo.text}</p>
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-300">{msg.text}</p>
+                  <div className="flex space-x-2 mt-1">
+                    <button
+                      className="text-blue-400 text-xs"
+                      onClick={() => setReplyingTo(msg)}
+                    >
+                      Responder
+                    </button>
+                    <button
+                      className="text-green-400 text-xs"
+                      onClick={() => likeMessage(msg.id, msg.likes)}
+                    >
+                      👍 {msg.likes}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

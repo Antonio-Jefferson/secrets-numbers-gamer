@@ -50,7 +50,13 @@ export default function LoginPage() {
       <h1 className="text-3xl font-bold mb-6">🔒 JOGO DO CADEADO</h1>
       <h2 className="text-2xl font-bold mb-6">Faça login</h2>
       {loading ? (
-        <div className="text-lg font-semibold">Carregando...</div>
+        <button
+          className="flex items-center justify-center bg-white text-gray-900 font-semibold p-3 rounded-lg w-80 shadow-lg hover:bg-gray-200 transition"
+          disabled
+        >
+          <FcGoogle className="text-2xl mr-3" />
+          Carregando...
+        </button>
       ) : (
         <button
           className="flex items-center justify-center bg-white text-gray-900 font-semibold p-3 rounded-lg w-80 shadow-lg hover:bg-gray-200 transition"

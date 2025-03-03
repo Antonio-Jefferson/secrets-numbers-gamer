@@ -19,8 +19,9 @@ export default function Profile() {
     null
   );
   const [games, setGames] = useState<any[]>([]);
-  const [wins, setWins] = useState<number>(0);
-  const [losses, setLosses] = useState<number>(0);
+  const [wins, setWins] = useState<number | null>(null);
+  const [losses, setLosses] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -28,16 +29,14 @@ export default function Profile() {
         router.push("/");
         return;
       }
-
       setUser({
         name: currentUser.displayName || "Usuário",
         photoURL: currentUser.photoURL || "",
       });
-
-      fetchUserStats(currentUser.uid);
-      fetchGames(currentUser.uid);
+      await fetchUserStats(currentUser.uid);
+      await fetchGames(currentUser.uid);
+      setLoading(false);
     });
-
     return () => unsubscribe();
   }, [router]);
 
@@ -45,7 +44,6 @@ export default function Profile() {
     try {
       const userRef = doc(db, "users", userId);
       const userSnap = await getDoc(userRef);
-
       if (userSnap.exists()) {
         const data = userSnap.data();
         setWins(data.wins || 0);
@@ -59,23 +57,13 @@ export default function Profile() {
   const fetchGames = async (userUid: string) => {
     try {
       const gamesRef = collection(db, "games");
-
       const q1 = query(gamesRef, where("player1.uid", "==", userUid));
       const snapshot1 = await getDocs(q1);
-
       const q2 = query(gamesRef, where("player2.uid", "==", userUid));
       const snapshot2 = await getDocs(q2);
-
       let allGames: any[] = [];
-
-      snapshot1.forEach((doc) => {
-        allGames.push({ id: doc.id, ...doc.data() });
-      });
-
-      snapshot2.forEach((doc) => {
-        allGames.push({ id: doc.id, ...doc.data() });
-      });
-
+      snapshot1.forEach((doc) => allGames.push({ id: doc.id, ...doc.data() }));
+      snapshot2.forEach((doc) => allGames.push({ id: doc.id, ...doc.data() }));
       setGames(allGames);
     } catch (error) {
       console.error("Erro ao buscar jogos do usuário:", error);
@@ -85,25 +73,58 @@ export default function Profile() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
       <div className="flex flex-col items-center gap-4 mb-4">
-        {user?.photoURL && (
-          <img
-            src={user.photoURL}
-            alt="Avatar"
-            className="w-44 h-44 rounded-full border-2 border-gray-500"
-          />
+        {loading ? (
+          <div className="w-36 h-36 rounded-full bg-gray-700 animate-pulse" />
+        ) : (
+          user?.photoURL && (
+            <img
+              src={user.photoURL}
+              alt="Avatar"
+              className="w-36 h-36 rounded-full border-2 border-gray-500"
+            />
+          )
         )}
-        <h1 className="text-2xl font-bold">{user?.name}</h1>
+        <h1 className="text-2xl font-bold">
+          {loading ? (
+            <div className="w-32 h-6 bg-gray-700 animate-pulse" />
+          ) : (
+            user?.name.split(" ")[1]
+          )}
+        </h1>
       </div>
 
       <div className="bg-gray-800 p-4 rounded-lg shadow-md w-full max-w-lg">
         <h2 className="text-xl font-bold">🏆 Estatísticas</h2>
-        <p className="text-green-400">Vitórias: {wins}</p>
-        <p className="text-red-400">Derrotas: {losses}</p>
+        <p className="text-green-400">
+          Vitórias:{" "}
+          {wins === null ? (
+            <span className="bg-gray-700 w-16 h-4 block animate-pulse" />
+          ) : (
+            wins
+          )}
+        </p>
+        <p className="text-red-400">
+          Derrotas:{" "}
+          {losses === null ? (
+            <span className="bg-gray-700 w-16 h-4 block animate-pulse" />
+          ) : (
+            losses
+          )}
+        </p>
       </div>
 
       <div className="bg-gray-800 p-4 rounded-lg shadow-md w-full max-w-lg mt-4">
         <h2 className="text-xl font-bold">🎮 Todos os Jogos</h2>
-        {games.length > 0 ? (
+        {loading ? (
+          <div className="space-y-2">
+            {[...Array(5)].map((_, index) => (
+              <div
+                key={index}
+                className="h-10 bg-gray-700 animate-pulse rounded"
+              />
+            ))}
+          </div>
+        ) : games.length > 0 ? (
           <ul>
             {games.map((game) => (
               <li

@@ -20,10 +20,10 @@ import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
-  const [ranking, setRanking] = useState<{ name: string; wins: number }[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -34,30 +34,13 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const fetchRanking = async () => {
-      const playersRef = collection(db, "players");
-      const q = query(playersRef, orderBy("wins", "desc"));
-      const querySnapshot = await getDocs(q);
-
-      const players = querySnapshot.docs.map((doc) => ({
-        name: doc.id,
-        wins: doc.data().wins || 0,
-      }));
-
-      setRanking(players);
-    };
-
-    fetchRanking();
-  }, []);
-
-  useEffect(() => {
     if (!user) return;
 
     const notificationsRef = collection(db, "notifications");
     const q = query(
       notificationsRef,
       where("userId", "==", user.uid),
-      where("read", "==", false) // Apenas notificações não lidas
+      where("read", "==", false)
     );
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
@@ -75,7 +58,6 @@ export default function Home() {
 
             if (!userSnapshot.empty) {
               const userData = userSnapshot.docs[0].data();
-              console.log({ userData });
               return {
                 id: doc.id,
                 ...data,
@@ -89,7 +71,6 @@ export default function Home() {
         })
       );
 
-      console.log({ notifs });
       setNotifications(notifs);
     });
 
@@ -101,33 +82,15 @@ export default function Home() {
     router.push("/");
   };
 
-  const toggleNotifications = () => {
-    setShowNotifications((prev) => {
-      if (prev) {
-        markNotificationsAsRead(); // Só marca como lida ao fechar
-      }
-      return !prev;
-    });
-  };
-
-  const markNotificationsAsRead = async () => {
-    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })));
-
-    notifications.forEach(async (notif) => {
-      if (!notif.read) {
-        const notifRef = doc(db, "notifications", notif.id);
-        await updateDoc(notifRef, { read: true });
-      }
-    });
-  };
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4 text-center">
-      {/* Header com Notificações */}
-      <div className="w-full max-w-md flex justify-end">
+      <div className="w-full max-w-md flex justify-end space-x-1 items-center">
         {user && (
           <div className="relative">
-            <button className="relative p-2" onClick={toggleNotifications}>
+            <button
+              className="relative p-2"
+              onClick={() => setShowNotifications((prev) => !prev)}
+            >
               <BellIcon className="w-6 h-6 text-white" />
               {notifications.some((notif) => !notif.read) && (
                 <span className="absolute top-0 right-0 bg-red-500 text-xs px-2 py-1 rounded-full">
@@ -136,7 +99,6 @@ export default function Home() {
               )}
             </button>
 
-            {/* Modal de Notificações */}
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-4 z-10">
                 <h3 className="text-lg font-semibold">Notificações</h3>
@@ -171,41 +133,44 @@ export default function Home() {
             )}
           </div>
         )}
+
+        {user && (
+          <div className="relative">
+            <button onClick={() => setShowProfileMenu((prev) => !prev)}>
+              <img
+                src={
+                  user.photoURL ||
+                  "https://filestore.community.support.microsoft.com/api/images/6061bd47-2818-4f2b-b04a-5a9ddb6f6467?upload=true"
+                }
+                alt="Avatar"
+                className="w-12 h-12 rounded-full border-2 border-white"
+              />
+            </button>
+
+            {/* Menu do Usuário */}
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-2 z-10">
+                <Link href="/profile">
+                  <button className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700 rounded">
+                    Ver Perfil
+                  </button>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-red-400 hover:bg-gray-700 rounded"
+                >
+                  Sair
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Perfil do Usuário */}
-      {user && (
-        <div className="flex flex-col items-center mb-6">
-          <img
-            src={
-              user.photoURL ||
-              "https://filestore.community.support.microsoft.com/api/images/6061bd47-2818-4f2b-b04a-5a9ddb6f6467?upload=true"
-            }
-            alt="Avatar"
-            className="w-16 h-16 rounded-full border-2 border-white"
-          />
-          <p className="mt-2 text-lg font-semibold">
-            {user.displayName || "Jogador"}
-          </p>
-          <div className="flex items-center space-x-1">
-            <button
-              className="mt-2 bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600"
-              onClick={handleLogout}
-            >
-              Sair
-            </button>
-            <Link href="/profile">
-              <button className="mt-2 bg-sky-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-sky-600">
-                Perfil
-              </button>
-            </Link>
-          </div>
-        </div>
-      )}
+      <h1 className="text-3xl font-bold mt-6">🔒 JOGO DO CADEADO</h1>
 
-      <h1 className="text-3xl font-bold mb-6">🔒 JOGO DO CADEADO</h1>
-
-      <div className="w-full max-w-md space-y-4">
+      {/* Botões de Ação */}
+      <div className="w-full max-w-md space-y-4 mt-6">
         <button
           className="bg-green-500 text-white text-xl font-semibold p-4 rounded w-full cursor-pointer"
           onClick={() => router.push("/create-game")}
@@ -226,6 +191,7 @@ export default function Home() {
         </button>
       </div>
 
+      {/* Ranking */}
       <div className="w-full max-w-lg mt-6">
         <Ranking />
       </div>
