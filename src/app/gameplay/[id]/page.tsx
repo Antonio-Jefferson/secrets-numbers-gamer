@@ -1,7 +1,7 @@
 "use client";
 import { ReactNode, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot, getDoc } from "firebase/firestore";
 import { db, auth } from "../../services/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -71,7 +71,6 @@ export default function GamePlay() {
   };
 
   const handleGuess = async () => {
-    console.log("Guess", guess);
     if (
       !guess ||
       !game ||
@@ -80,7 +79,6 @@ export default function GamePlay() {
     )
       return;
 
-    console.log("Guess", guess);
     const isPlayer1 = currentUser.uid === game.player1.uid;
     const opponentNumbers = isPlayer1 ? game.numbers2 : game.numbers1;
     const revealed = isPlayer1
@@ -106,18 +104,23 @@ export default function GamePlay() {
           isPlayer1 ? game.player2.uid : game.player1.uid
         );
 
-        // Atualiza vitórias para o vencedor
+        // Buscar os dados atuais antes de atualizar
+        const userSnap = await getDoc(userRef);
+        const opponentSnap = await getDoc(opponentRef);
+
+        const userWins = userSnap.exists() ? userSnap.data().wins || 0 : 0;
+        const opponentLosses = opponentSnap.exists()
+          ? opponentSnap.data().losses || 0
+          : 0;
+
+        // Atualizar vitórias e derrotas corretamente
         await updateDoc(userRef, {
-          wins: (game.scores?.[currentUser.uid] || 0) + 1,
+          wins: userWins + 1,
         });
 
-        // Atualiza derrotas para o perdedor
         await updateDoc(opponentRef, {
-          losses:
-            (game.scores?.[isPlayer1 ? game.player2.uid : game.player1.uid] ||
-              0) + 1,
+          losses: opponentLosses + 1,
         });
-
         await updateDoc(doc(db, "games", gameId), {
           winner: currentUser.uid,
           [`scores.${currentUser.uid}`]:
