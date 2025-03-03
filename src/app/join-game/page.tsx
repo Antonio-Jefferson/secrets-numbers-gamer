@@ -7,12 +7,13 @@ import {
   doc,
   getDoc,
   updateDoc,
-  setDoc,
   query,
   where,
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function JoinGame() {
   const [gameId, setGameId] = useState("");
@@ -50,33 +51,33 @@ export default function JoinGame() {
   };
 
   const joinGame = async () => {
-    if (!user || !gameId)
-      return alert("Você precisa estar logado e informar o ID do jogo!");
+    if (!user || !gameId) {
+      toast.warning("Você precisa estar logado e informar o ID do jogo!");
+      return;
+    }
 
-    // 🔎 Verificar se o usuário já está em um jogo ativo
     const activeGamesQuery = query(
       collection(db, "games"),
       where("status", "in", ["waiting", "in-progress"]),
-      where("player1", "==", user.uid) // Verifica se é player1
+      where("player1", "==", user.uid)
     );
 
     const activeGamesSnapshot = await getDocs(activeGamesQuery);
-
     if (!activeGamesSnapshot.empty) {
-      return alert(
+      toast.info(
         "Você já está em um jogo ativo. Termine antes de entrar em outro."
       );
+      return;
     }
 
-    // 📌 Se passou na verificação, tentar entrar no jogo
     const gameRef = doc(db, "games", gameId);
     const gameSnap = await getDoc(gameRef);
-
-    if (!gameSnap.exists()) return alert("Jogo não encontrado!");
+    if (!gameSnap.exists()) {
+      toast.error("Jogo não encontrado!");
+      return;
+    }
 
     const gameData = gameSnap.data();
-
-    // Se já estiver no jogo, apenas redireciona
     if (
       gameData.player1?.uid === user.uid ||
       gameData.player2?.uid === user.uid
@@ -85,34 +86,31 @@ export default function JoinGame() {
       return;
     }
 
-    // Se ainda houver vaga, entra no jogo
     if (!gameData.player2) {
       await updateDoc(gameRef, {
         player2: { uid: user.uid, name: user.name },
         status: "in-progress",
       });
+      toast.success("Você entrou no jogo!");
       router.push(`/game/${gameId}`);
       return;
     }
 
-    alert("O jogo já está cheio!");
+    toast.error("O jogo já está cheio!");
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
       <h1 className="text-2xl font-bold mb-4">Entrar em uma Partida</h1>
-
       <input
         className="p-2 text-blue-100 w-80 mb-2"
         placeholder="ID do jogo..."
         value={gameId}
         onChange={(e) => setGameId(e.target.value)}
       />
-
       <button className="bg-blue-500 p-2 rounded w-80" onClick={joinGame}>
         Entrar no Jogo
       </button>
-
       <h2 className="text-xl font-bold mt-6">Jogos Disponíveis</h2>
       <ul className="mt-4">
         {games.map((game) => (

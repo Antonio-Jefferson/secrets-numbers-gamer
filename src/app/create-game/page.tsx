@@ -52,7 +52,7 @@ export default function CreateGamePage() {
 
       <input
         className="p-2 text-blue-100 bg-gray-700 rounded w-80 mb-2"
-        placeholder="Nome da Partida (ex: X1 Jeff e Layde)"
+        placeholder="Nome da Partida (ex: X1 )"
         value={gameName}
         onChange={(e) => setGameName(e.target.value)}
       />
