@@ -80,11 +80,18 @@ export default function Game() {
     let field = "";
     console.log(userUid);
 
+    // Verifica se o jogador é o player1
     if (game.player1.uid === userUid) {
+      console.log("entrou como player 1", game.player1.uid, userUid);
       field = "numbers1";
-    } else if (game.player2.uid === userUid) {
+    }
+    // Verifica se o jogador é o player2
+    else if (game.player2.uid === userUid) {
+      console.log("entrou como player 2", game.player2.uid, userUid);
       field = "numbers2";
-    } else {
+    }
+    // Se ambos os jogadores estão no jogo, mas o usuário não foi encontrado
+    else {
       return alert("Você não está neste jogo!");
     }
 

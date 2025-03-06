@@ -1,7 +1,13 @@
 "use client";
 import { ReactNode, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, updateDoc, onSnapshot, getDoc } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  onSnapshot,
+  getDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { db, auth } from "../../services/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -150,8 +156,20 @@ export default function GamePlay() {
     setGuess("");
   };
 
-  const handleLogout = () => {
-    router.push("/home");
+  const endGame = async () => {
+    if (!gameId || !game) return;
+
+    try {
+      await deleteDoc(doc(db, "games", gameId));
+
+      setFeedback("Partida finalizada. Redirecionando...");
+      await Promise.all([
+        router.push("/home"), // Pode ser a página de espera, home ou onde for necessário
+      ]);
+    } catch (error) {
+      console.error("Erro ao finalizar a partida:", error);
+      setFeedback("Ocorreu um erro ao finalizar a partida. Tente novamente.");
+    }
   };
 
   return (
@@ -239,14 +257,14 @@ export default function GamePlay() {
                 className="bg-green-800 p-2 mt-4 rounded w-40 text-lg font-semibold"
                 onClick={resetGame}
               >
-                Reiniciar
+                Revanche
               </button>
 
               <button
                 className="bg-red-500 p-2 mt-4 rounded w-40 text-lg font-semibold"
-                onClick={handleLogout}
+                onClick={endGame}
               >
-                Sair
+                Finalizar partida
               </button>
             </div>
           )}
