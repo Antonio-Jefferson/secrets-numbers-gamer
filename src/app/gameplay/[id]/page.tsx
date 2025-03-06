@@ -252,7 +252,7 @@ export default function GamePlay() {
           )}
 
           {(game.winner || !game.numbers1 || !game.numbers2) && (
-            <div className="space-x-4">
+            <div className="space-x-4 items-center">
               <button
                 className="bg-green-800 p-2 mt-4 rounded w-40 text-lg font-semibold"
                 onClick={resetGame}
